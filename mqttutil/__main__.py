@@ -56,8 +56,11 @@ class Task:
         self.qos = qos
 
         if test:
-            result = self._eval()
-            self._publish(self.topic, result)
+            try:
+                result = self._eval()
+                self._publish(self.topic, result)
+            except Exception as ex:
+                logger.warning("testing %s failed: %s", self.topic, ex)
 
         # add to schedule
         self.scheduling_interval_s = timeparse(scheduling_interval)
