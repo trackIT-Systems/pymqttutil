@@ -42,7 +42,7 @@ class Task:
 
         for imp in requires:
             if imp not in globals():
-                logger.info(f"importing module {imp}")
+                logger.info("importing module %s", imp)
                 globals()[imp] = __import__(imp)
 
         # text function
@@ -79,11 +79,11 @@ class Task:
             return self.topic_prefix + "/" + self.topic_suffix
 
     def _eval(self):
-        logger.debug(f"exec {self.func_str}")
+        logger.debug("exec %s", self.func_str)
         result = eval(self.func_str)
         return result
 
-    def _publish(self, topic: str, result):
+    def _publish(self, pub_topic: str, result):
         # if json mode is set, publish json dict instead of primitive datatypes
         if self.json:
             if isinstance(result, dict):
@@ -95,8 +95,8 @@ class Task:
             else:
                 result_json = json.dumps({0: result})
 
-            logger.info(f"publish {topic} {result_json}")
-            self.mqtt_c.publish(topic, result_json, qos=self.qos)
+            logger.info("publish %s %s", pub_topic, result_json)
+            self.mqtt_c.publish(pub_topic, result_json, qos=self.qos)
             return
 
         # don't publish Nones
@@ -105,37 +105,37 @@ class Task:
 
         # publish primitive data directly
         elif type(result) in [int, float, str]:
-            logger.info(f"publish {topic} {result}")
-            self.mqtt_c.publish(topic, result, qos=self.qos)
+            logger.info("publish %s %s", pub_topic, result)
+            self.mqtt_c.publish(pub_topic, result, qos=self.qos)
 
         # expand dict by keys
         elif isinstance(result, dict):
             for k, v in result.items():
-                self._publish(f"{topic}/{k}", v)
+                self._publish(f"{pub_topic}/{k}", v)
 
         # iterate list (via dict conversion)
         elif isinstance(result, list):
-            self._publish(topic, dict(enumerate(result)))
+            self._publish(pub_topic, dict(enumerate(result)))
 
         elif isinstance(result, tuple):
             # recurse as dict for namedtuple
             if hasattr(result, '_asdict') and hasattr(result, '_fields'):
-                self._publish(topic, result._asdict())
+                self._publish(pub_topic, result._asdict())
             # iterate regular tuple (via dict conversion)
             else:
-                self._publish(topic, dict(enumerate(result)))
+                self._publish(pub_topic, dict(enumerate(result)))
 
         # print info on unknown result types
         else:
-            logger.warning(f"type {type(result)} is not supported. ({topic})")
+            logger.warning("type %s is not supported. (%s)", type(result), pub_topic)
 
     def run(self):
         try:
             result = self._eval()
             self._publish(self.topic, result)
-        except Exception as e:
-            logger.warning(f"Task [{self.topic_suffix}] failed:")
-            logger.exception(e)
+        except Exception as ex:
+            logger.warning("Task [%s] failed: ", self.topic_suffix)
+            logger.exception(ex)
 
 
 if __name__ == "__main__":
@@ -159,11 +159,11 @@ if __name__ == "__main__":
 
     # look for known sections
     for topic in config.sections():
-        vars = {k: literal_eval(v) for k, v in config.items(topic)}
+        var = {k: literal_eval(v) for k, v in config.items(topic)}
         try:
-            tasks.append(Task(mqtt_c, args.json, topic, **vars))
+            tasks.append(Task(mqtt_c, args.json, topic, **var))
         except Exception as e:
-            logger.warning(f"Task '{topic}' cannot be created:")
+            logger.warning("Task '%s' cannot be created:", topic)
             logger.exception(e)
 
     mqtt_c._keepalive = min([t.scheduling_interval_s for t in tasks])
