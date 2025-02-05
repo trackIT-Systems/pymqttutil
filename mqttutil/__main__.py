@@ -11,33 +11,38 @@ import paho.mqtt.client as mqtt
 import schedule
 from pytimeparse.timeparse import timeparse
 
-parser = argparse.ArgumentParser("mqttutil",
-                                 description="publish system information via mqtt",
-                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                 )
+parser = argparse.ArgumentParser(
+    "mqttutil",
+    description="publish system information via mqtt",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
 parser.add_argument("-c", "--config", help="configuration file", type=str, default="etc/mqttutil.conf")
 parser.add_argument("-v", "--verbose", help="increase output verbosity", action="count", default=0)
 
 publish_options = parser.add_argument_group("mqtt")
 publish_options.add_argument("--mqtt-host", help="hostname of mqtt broker", default="localhost", type=str)
 publish_options.add_argument("--mqtt-port", help="port of mqtt broker", default=1883, type=int)
-publish_options.add_argument("--json", help="publish json dict instead of primitive datatypes", action="store_true", default=False)
+publish_options.add_argument(
+    "--json", help="publish json dict instead of primitive datatypes", action="store_true", default=False
+)
 
 logger = logging.getLogger("mqttutil")
 
 
 class Task:
-    def __init__(self,
-                 mqtt_c: mqtt.Client,
-                 json: bool,
-                 topic: str,
-                 func: str,
-                 scheduling_interval: str,
-                 topic_prefix: str = f"{platform.node()}/mqttutil",
-                 requires: List[str] = [],
-                 qos: int = 0,
-                 test: bool = True,
-                 **kwargs):
+    def __init__(
+        self,
+        mqtt_c: mqtt.Client,
+        json: bool,
+        topic: str,
+        func: str,
+        scheduling_interval: str,
+        topic_prefix: str = f"{platform.node()}/mqttutil",
+        requires: List[str] = [],
+        qos: int = 0,
+        test: bool = True,
+        **kwargs,
+    ):
         super().__init__()
 
         for imp in requires:
@@ -88,7 +93,7 @@ class Task:
         if self.json:
             if isinstance(result, dict):
                 result_json = json.dumps(result)
-            elif isinstance(result, tuple) and hasattr(result, '_asdict'):
+            elif isinstance(result, tuple) and hasattr(result, "_asdict"):
                 result_json = json.dumps(result._asdict())
             elif isinstance(result, tuple) or isinstance(result, list):
                 result_json = json.dumps(dict(enumerate(result)))
@@ -119,7 +124,7 @@ class Task:
 
         elif isinstance(result, tuple):
             # recurse as dict for namedtuple
-            if hasattr(result, '_asdict') and hasattr(result, '_fields'):
+            if hasattr(result, "_asdict") and hasattr(result, "_fields"):
                 self._publish(pub_topic, result._asdict())
             # iterate regular tuple (via dict conversion)
             else:
