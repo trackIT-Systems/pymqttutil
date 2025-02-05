@@ -6,22 +6,22 @@ Publish system information via MQTT.
 
 ```
 $ python3 -m mqttutil --help
-usage: mqttutil [-h] [-c CONFIG] [-v] [--mqtt-host MQTT_HOST] [--mqtt-port MQTT_PORT] [--json]
+usage: mqttutil [-h] [-c CONFIG] [-v] [--mqtt-host MQTT_HOST] [--mqtt-port MQTT_PORT] [--outpath OUTPATH]
 
 publish system information via mqtt
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -c CONFIG, --config CONFIG
                         configuration file (default: etc/mqttutil.conf)
   -v, --verbose         increase output verbosity (default: 0)
 
-mqtt:
+publish:
   --mqtt-host MQTT_HOST
                         hostname of mqtt broker (default: localhost)
   --mqtt-port MQTT_PORT
                         port of mqtt broker (default: 1883)
-  --json                publish json dict instead of primitive datatypes (default: False)
+  --outpath OUTPATH     path for local storage (default: None)
 ```
 
 ## Configuration

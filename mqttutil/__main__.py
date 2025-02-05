@@ -23,9 +23,6 @@ parser.add_argument("-v", "--verbose", help="increase output verbosity", action=
 publish_options = parser.add_argument_group("publish")
 publish_options.add_argument("--mqtt-host", help="hostname of mqtt broker", default="localhost", type=str)
 publish_options.add_argument("--mqtt-port", help="port of mqtt broker", default=1883, type=int)
-publish_options.add_argument(
-    "--json", help="publish json dict instead of primitive datatypes", action="store_true", default=False
-)
 publish_options.add_argument("--outpath", help="path for local storage", default=None, type=str)
 
 logger = logging.getLogger("mqttutil")
@@ -35,7 +32,6 @@ class Task:
     def __init__(
         self,
         mqtt_c: mqtt.Client,
-        json: bool,
         topic: str,
         func: str,
         scheduling_interval: str,
@@ -58,7 +54,6 @@ class Task:
 
         # set mqtt
         self.mqtt_c = mqtt_c
-        self.json = json
         self.topic_prefix = topic_prefix
         self.topic_suffix = topic
         self.qos = qos
@@ -103,59 +98,27 @@ class Task:
         return result
 
     def _publish(self, pub_topic: str, result):
-        # if json mode is set, publish json dict instead of primitive datatypes
-        if self.json:
-            result_dict: dict
+        result_dict: dict
 
-            if isinstance(result, dict):
-                result_dict = result
-            elif isinstance(result, tuple) and hasattr(result, "_asdict"):
-                result_dict = result._asdict()
-            elif isinstance(result, tuple) or isinstance(result, list):
-                result_dict = dict(enumerate(result))
-            else:
-                result_dict = {0: result}
-
-            result_json = json.dumps(result_dict)
-            logger.info("publish %s %s", pub_topic, result_json)
-            self.mqtt_c.publish(pub_topic, result_json, qos=self.qos)
-
-            if self.jsonl_path:
-                with open(self.jsonl_path, "a") as jsonl_file:
-                    jsonl_dict = {"_time": datetime.datetime.now().astimezone(), **result_dict}
-                    jsonl_file.write(json.dumps(jsonl_dict, default=str) + "\n")
-
-            return
-
-        # don't publish Nones
-        if result is None:
-            return
-
-        # publish primitive data directly
-        elif type(result) in [int, float, str]:
-            logger.info("publish %s %s", pub_topic, result)
-            self.mqtt_c.publish(pub_topic, result, qos=self.qos)
-
-        # expand dict by keys
-        elif isinstance(result, dict):
-            for k, v in result.items():
-                self._publish(f"{pub_topic}/{k}", v)
-
-        # iterate list (via dict conversion)
-        elif isinstance(result, list):
-            self._publish(pub_topic, dict(enumerate(result)))
-
-        elif isinstance(result, tuple):
-            # recurse as dict for namedtuple
-            if hasattr(result, "_asdict") and hasattr(result, "_fields"):
-                self._publish(pub_topic, result._asdict())
-            # iterate regular tuple (via dict conversion)
-            else:
-                self._publish(pub_topic, dict(enumerate(result)))
-
-        # print info on unknown result types
+        if isinstance(result, dict):
+            result_dict = result
+        elif isinstance(result, tuple) and hasattr(result, "_asdict"):
+            result_dict = result._asdict()
+        elif isinstance(result, tuple) or isinstance(result, list):
+            result_dict = dict(enumerate(result))
         else:
-            logger.warning("type %s is not supported. (%s)", type(result), pub_topic)
+            result_dict = {0: result}
+
+        result_json = json.dumps(result_dict)
+        logger.info("publish %s %s", pub_topic, result_json)
+        self.mqtt_c.publish(pub_topic, result_json, qos=self.qos)
+
+        if self.jsonl_path:
+            with open(self.jsonl_path, "a") as jsonl_file:
+                jsonl_dict = {"_time": datetime.datetime.now().astimezone(), **result_dict}
+                jsonl_file.write(json.dumps(jsonl_dict, default=str) + "\n")
+
+        return
 
     def run(self):
         try:
@@ -189,7 +152,7 @@ if __name__ == "__main__":
     for topic in config.sections():
         var = {k: literal_eval(v) for k, v in config.items(topic)}
         try:
-            tasks.append(Task(mqtt_c, args.json, topic, outpath=args.outpath, **var))
+            tasks.append(Task(mqtt_c=mqtt_c, topic=topic, outpath=args.outpath, **var))
         except Exception as e:
             logger.warning("Task '%s' cannot be created:", topic)
             logger.exception(e)
