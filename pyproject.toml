@@ -1,0 +1,22 @@
+[project]
+name = "pymqttutil"
+version = "0.2.0"
+description = "Publish system information via MQTT"
+authors = [
+    {name = "Jonas Höchst", email = "hoechst@trackit.systems"},
+]
+dependencies = [
+    "schedule>=1.2.1",
+    "paho-mqtt<2,>=1.6",
+    "pytimeparse>=1.1.8",
+]
+requires-python = ">=3.9"
+readme = "Readme.md"
+license = {text = "GPL-3.0"}
+
+[project.urls]
+Repository = "https://github.com/trackIT-Systems/pymqttutil"
+"Bug Tracker" = "https://github.com/trackIT-Systems/pymqttutil/issues"
+
+[tool.pdm]
+distribution = false
