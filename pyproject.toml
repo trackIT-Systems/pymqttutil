@@ -20,3 +20,6 @@ Repository = "https://github.com/trackIT-Systems/pymqttutil"
 
 [tool.pdm]
 distribution = false
+
+[tool.setuptools]
+py-modules = ["mqttutil"]
