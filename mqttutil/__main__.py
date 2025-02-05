@@ -68,7 +68,10 @@ class Task:
                 logger.warning("testing %s failed: %s", self.topic, ex)
 
         # add to schedule
-        self.scheduling_interval_s = timeparse(scheduling_interval)
+        scheduling_interval_s = timeparse(scheduling_interval)
+        if scheduling_interval_s is None:
+            raise RuntimeError("Couldn't parse scheduling interval '%s'", scheduling_interval)
+        self.scheduling_interval_s = int(scheduling_interval_s)
         schedule.every(self.scheduling_interval_s).seconds.do(Task.run, self)
 
     def __repr__(self):
