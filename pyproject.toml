@@ -1,5 +1,5 @@
 [project]
-name = "pymqttutil"
+name = "mqttutil"
 version = "0.2.0"
 description = "Publish system information via MQTT"
 authors = [
