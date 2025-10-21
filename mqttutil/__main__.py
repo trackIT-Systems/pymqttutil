@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
     # get mqtt config
     mqtt_c = mqtt.Client(
-        callback_api_version=mqtt.CallbackAPIVersion.VERSION1,
+        callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
         client_id=f"{platform.node()}-mqttutil",
         clean_start=False,
     )
